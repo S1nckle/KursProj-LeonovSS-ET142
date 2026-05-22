@@ -1,13 +1,14 @@
 import requests
 import time
 import json
+import re
 from tqdm import tqdm
-import mwparserfromhell
+from bs4 import BeautifulSoup
 
-WIKI = "https://unstable-universe-mc.fandom.com"
+WIKI_BASE = "https://unstable-universe-mc.fandom.com"
 
 
-def get_all_pages():
+def get_all_page_titles():
     pages = []
     params = {
         "action": "query",
@@ -17,7 +18,7 @@ def get_all_pages():
         "format": "json"
     }
     while True:
-        response = requests.get(f"{WIKI}/api.php", params=params)
+        response = requests.get(f"{WIKI_BASE}/api.php", params=params)
         data = response.json()
         pages.extend([p["title"] for p in data["query"]["allpages"]])
 
@@ -29,44 +30,65 @@ def get_all_pages():
     return pages
 
 
-def get_page_content(title):
+def get_clean_text(title):
+    """Получаем максимально чистый текст страницы"""
     params = {
-        "action": "query",
-        "prop": "revisions",
-        "rvprop": "content",
-        "titles": title,
-        "format": "json"
+        "action": "parse",
+        "page": title,
+        "prop": "text",  # HTML-версия
+        "format": "json",
+        "disableeditsection": True,
+        "disabletoc": True
     }
-    response = requests.get(f"{WIKI}/api.php", params=params)
-    data = response.json()
-    page = next(iter(data["query"]["pages"].values()))
-    wikitext = page["revisions"][0]["*"] if "revisions" in page else ""
-    return wikitext
+
+    try:
+        response = requests.get(f"{WIKI_BASE}/api.php", params=params, timeout=10)
+        data = response.json()
+
+        html = data["parse"]["text"]["*"]
+
+        # Парсим HTML и извлекаем чистый текст
+        soup = BeautifulSoup(html, "html.parser")
+
+        # Удаляем ненужные элементы
+        for unwanted in soup.select("table, .infobox, .navbox, .metadata, .mw-editsection, style, script"):
+            unwanted.decompose()
+
+        # Извлекаем текст
+        text = soup.get_text(separator="\n")
+
+        text = text.strip()
+
+        return text
+
+    except Exception as e:
+        print(f"Ошибка при обработке {title}: {e}")
+        return get_clean_text(title)
 
 
 # ======================
-# Основной запуск
+# Запуск
 # ======================
-pages = get_all_pages()
-print(f"Найдено страниц: {len(pages)}")
+print("Получаем список страниц...")
+titles = get_all_page_titles()
+print(f"Найдено страниц: {len(titles)}")
 
 dataset = []
 
-for title in tqdm(pages):
-    wikitext = get_page_content(title)
-    # Очистка
-    parsed = mwparserfromhell.parse(wikitext)
-    clean_text = parsed.strip_code()  # убирает большую часть вики-разметки
+for title in tqdm(titles):
+    clean_text = get_clean_text(title)
 
     dataset.append({
         "title": title,
-        "url": f"{WIKI}/wiki/{title.replace(' ', '_')}",
-        "content": clean_text,
-        "raw_wikitext": wikitext  # на всякий случай
+        "url": f"{WIKI_BASE}/wiki/{title.replace(' ', '_')}",
+        "content": clean_text
     })
-    time.sleep(0.3)  # чтобы не попасть под rate-limit
+
+    time.sleep(0.5)  # вежливость к серверу
 
 # Сохранение
-with open("../data/unstable_universe_dataset.jsonl", "w", encoding="utf-8") as f:
+with open("../data/unstable_universe_dataset_clean2.jsonl", "w", encoding="utf-8") as f:
     for item in dataset:
         f.write(json.dumps(item, ensure_ascii=False) + "\n")
+
+print(f"\nГотово! Сохранено {len(dataset)} статей.")

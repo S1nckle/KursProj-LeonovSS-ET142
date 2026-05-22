@@ -22,6 +22,7 @@ tfidf_matrix = vectorizer.fit_transform(df['no_stopwords'])
 # получаем список всех слов (словарь)
 feature_names = vectorizer.get_feature_names_out()
 print(f"Размер словаря: {len(feature_names)} слов")
+print(feature_names)
 
 print(f"Текст: {df['no_stopwords'].iloc[100]}")
 print(f"Вектор:\n{tfidf_matrix[0].toarray()}")

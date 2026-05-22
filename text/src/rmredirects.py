@@ -7,7 +7,7 @@ df = df[~df['content'].str.contains('redirect', case=False, na=False)].copy()
 print(f"После очистки: {len(df)} записей.")
 print(f"Удалено {n - len(df)} записей.")
 
-df.to_json('../data/unstable_universe_dataset_no_redirect.jsonl',
+df.to_json('../data/unstable_universe_dataset.jsonl',
            orient='records',
            lines=True,
            force_ascii=False)

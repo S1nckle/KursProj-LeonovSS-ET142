@@ -16,8 +16,8 @@ def lemmatize_text(text):
 
 df['lemmatized'] = df['clean_content'].apply(lemmatize_text)
 
-print('До: \n', df['clean_content'][15])
-print('После: \n', df['lemmatized'][15])
+print('До: \n', df['clean_content'][3])
+print('После: \n', df['lemmatized'][3])
 
 df.to_json('../data/unstable_universe_dataset_lemmatized.jsonl',
            orient='records',

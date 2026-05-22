@@ -13,26 +13,11 @@ def clean_text(text):
         return ""
 
     text = text.lower()
-    #Удаляем ссылки
-    text = re.sub(r'https?://\S+|www\.\S+|\b\w+\.(com|org|net|wiki|fandom)\b', ' ', text)
+    #
     # Оставляем только буквы, цифры и _
-    text = re.sub(r'[^a-z0-9_ ]', ' ', text)
-
-    tokens = text.split()
-    cleaned = []
-
-    for token in tokens:
-        if len(token) < 2:
-            continue
-
-        # Убираем цифры только в начале и в конце
-        cleaned_token = re.sub(r'^[0-9]+', '', token)
-        cleaned_token = re.sub(r'[0-9]+$', '', cleaned_token)
-
-        if any(c.isalpha() for c in token):
-            cleaned.append(token)
-
-    return " ".join(cleaned)
+    text = re.sub(r'[^a-z0-9_`\' ]', ' ', text)
+    text = ' '.join(text.split())
+    return text
 
 nlp = spacy.load("en_core_web_lg")
 
@@ -76,7 +61,7 @@ vectorizer = TfidfVectorizer(stop_words=list(STOP_WORDS))  # обычно име
 tfidf_matrix = vectorizer.fit_transform(df['no_stopwords'])
 
 # Пример поиска
-query = "spoke and jamatop"
+query = "Spoke and Jamatop"
 results = search_texts(query, vectorizer, tfidf_matrix, df['no_stopwords'], top_n=5)
 
 print(f"Поисковый запрос: '{query}'")

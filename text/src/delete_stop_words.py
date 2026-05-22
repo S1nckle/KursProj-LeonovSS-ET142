@@ -12,12 +12,12 @@ def remove_stop_words(text):
     print(i,end=' ')
     i += 1
     doc = nlp(text)
-    return ' '.join([token.text for token in doc if not token.is_stop and len(token.text) > 1])
+    return ' '.join([token.text for token in doc if not token.is_stop])
 
-
+print()
 df['no_stopwords'] = df['lemmatized'].apply(remove_stop_words)
-print("До:   ", df['lemmatized'][15])
-print("После:", df['no_stopwords'][15])
+print("До:   ", df['lemmatized'][3])
+print("После:", df['no_stopwords'][3])
 
 df.to_json('../data/unstable_universe_dataset_no_stopwords.jsonl',
            orient='records',
